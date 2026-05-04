@@ -7,7 +7,7 @@ A client-side React application to remove C2PA and other metadata from images by
 ## Features
 
 - **Metadata Stripping:** Remove C2PA manifests, EXIF, and XMP data from JPEG, PNG, and WebP images via Canvas re-encoding.
-- **EXIF Editor:** Read and modify EXIF metadata on JPEG images — edit title, author, copyright, camera info, date taken, and remove GPS location data. All client-side with piexifjs.
+- **EXIF Editor:** View and modify EXIF metadata. Supports JPEG natively and automatically converts other formats (PNG, WebP, etc.) to JPEG for editing. Edit title, author, copyright, camera info, date taken, and remove GPS location data. All client-side with piexifjs.
 - **Local Processing:** No images are ever uploaded to a server. All processing happens in your browser.
 - **Drag & Drop:** Easy-to-use drop zone for image uploads.
 - **Side-by-Side Preview:** Compare the original image with the cleaned version.
@@ -40,12 +40,14 @@ This process effectively extracts only the raw pixel data and encodes it into a 
 
 ### EXIF Editor (piexifjs)
 
-The EXIF Editor reads and modifies EXIF metadata directly in JPEG files without re-encoding the image:
+The EXIF Editor allows viewing and modifying EXIF metadata. While `piexifjs` only supports writing to JPEG files, the editor supports other formats by converting them to JPEG:
 
-1. Upload a JPEG image via drag-and-drop.
-2. `piexifjs` parses the raw EXIF binary data and extracts editable fields (title, author, copyright, camera make/model, date taken), read-only technical details (ISO, exposure, aperture, focal length, orientation), and GPS coordinates.
-3. Edit any field or remove GPS location data with one click.
-4. Click "Save & Download" — `piexifjs` writes the updated EXIF data back into the JPEG and a new file is downloaded. The pixel data is never re-encoded, preserving original quality.
+1. **Format Handling:**
+   - **JPEG:** Processed directly without re-encoding to preserve original pixel quality.
+   - **Other (PNG, WebP, etc.):** Automatically converted to JPEG using the browser's Canvas API to enable metadata editing.
+2. **Parsing:** `piexifjs` parses the raw EXIF binary data and extracts editable fields (title, author, copyright, camera make/model, date taken), read-only technical details (ISO, exposure, aperture, focal length, orientation), and GPS coordinates.
+3. **Editing:** Edit any field or remove GPS location data with one click.
+4. **Saving:** Click "Save & Download" — `piexifjs` writes the updated EXIF data back into the JPEG structure. For original JPEG files, pixel data is never re-encoded; for other formats, a new JPEG file is generated.
 
 ## Getting Started
 

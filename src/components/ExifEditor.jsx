@@ -1,9 +1,9 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import {
   Upload, ImageIcon, Download, MapPin, MapPinOff, Camera,
-  Calendar, User, Shield, Info, AlertTriangle,
+  Calendar, User, Shield, Info,
 } from 'lucide-react'
-import { readExifFromJpeg, writeExifToJpeg, isJpeg } from '@/lib/exif'
+import { readExifFromJpeg, writeExifToJpeg, isJpeg, convertToJpeg } from '@/lib/exif'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -42,6 +42,8 @@ export function ExifEditor({ className }) {
   const [gpsRemoved, setGpsRemoved] = useState(false)
   const [imageDimensions, setImageDimensions] = useState(null)
   const [isDragging, setIsDragging] = useState(false)
+  const [isConverting, setIsConverting] = useState(false)
+  const [originalFile, setOriginalFile] = useState(null)
   const imgRef = useRef(null)
 
   useEffect(() => {
@@ -56,13 +58,29 @@ export function ExifEditor({ className }) {
     setEditedFields({})
     setGpsRemoved(false)
     setImageDimensions(null)
+    setOriginalFile(selectedFile)
 
     if (previewUrl) URL.revokeObjectURL(previewUrl)
 
-    setFile(selectedFile)
+    let fileToProcess = selectedFile
     setIsLoading(true)
 
-    const url = URL.createObjectURL(selectedFile)
+    if (!isJpeg(selectedFile)) {
+      setIsConverting(true)
+      try {
+        fileToProcess = await convertToJpeg(selectedFile)
+      } catch (err) {
+        console.error('Conversion error:', err)
+        setError('Failed to convert image to JPEG for editing.')
+        setIsLoading(false)
+        setIsConverting(false)
+        return
+      }
+      setIsConverting(false)
+    }
+
+    setFile(fileToProcess)
+    const url = URL.createObjectURL(fileToProcess)
     setPreviewUrl(url)
 
     // Read image dimensions
@@ -74,7 +92,7 @@ export function ExifEditor({ className }) {
 
     // Read EXIF
     try {
-      const data = await readExifFromJpeg(selectedFile)
+      const data = await readExifFromJpeg(fileToProcess)
       if (data) {
         setExifData(data)
         // Pre-populate editable fields from EXIF
@@ -191,7 +209,8 @@ export function ExifEditor({ className }) {
         <div className="flex flex-col items-center gap-4 text-center">
           <h2 className="text-3xl font-bold tracking-tight">EXIF Metadata Editor</h2>
           <p className="max-w-lg text-muted-foreground text-balance">
-            View and edit EXIF metadata in your JPEG images.
+            View and edit EXIF metadata in your images.
+            Non-JPEG images are automatically converted for editing.
             Everything processed locally in your browser.
           </p>
         </div>
@@ -212,15 +231,15 @@ export function ExifEditor({ className }) {
             id="exif-file-input"
             type="file"
             className="hidden"
-            accept="image/jpeg,image/jpg"
+            accept="image/*"
             onChange={handleFileInput}
           />
           <div className="bg-primary/10 p-4 rounded-full mb-4 group-hover:scale-110 transition-transform">
             <Upload className="size-8 text-primary" />
           </div>
-          <h3 className="text-xl font-semibold mb-2">Drop your JPEG here</h3>
+          <h3 className="text-xl font-semibold mb-2">Drop your image here</h3>
           <p className="text-muted-foreground max-w-xs text-sm">
-            EXIF editing is supported for JPEG images only.
+            JPEG, PNG, WebP and more supported.
           </p>
           <div className="mt-4 flex items-center gap-2 text-sm text-muted-foreground/60">
             <ImageIcon className="size-4" />
@@ -265,6 +284,7 @@ export function ExifEditor({ className }) {
         <Button variant="ghost" size="sm" onClick={() => {
           if (previewUrl) URL.revokeObjectURL(previewUrl)
           setFile(null)
+          setOriginalFile(null)
           setPreviewUrl(null)
           setExifData(null)
           setEditedFields({})
@@ -280,7 +300,9 @@ export function ExifEditor({ className }) {
         <Card>
           <CardContent className="flex flex-col items-center gap-3 p-12">
             <Spinner />
-            <p className="text-sm font-medium">Reading EXIF data...</p>
+            <p className="text-sm font-medium">
+              {isConverting ? 'Converting to JPEG...' : 'Reading EXIF data...'}
+            </p>
           </CardContent>
         </Card>
       ) : (
@@ -289,10 +311,10 @@ export function ExifEditor({ className }) {
           <Card>
             <CardHeader>
               <CardTitle className="text-sm font-medium">Image Preview</CardTitle>
-              {!isJpeg(file) && (
-                <CardDescription className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
-                  <AlertTriangle className="size-3.5" />
-                  Non-JPEG format — EXIF editing limited
+              {originalFile && !isJpeg(originalFile) && (
+                <CardDescription className="flex items-center gap-1.5 text-blue-600 dark:text-blue-400">
+                  <Info className="size-3.5" />
+                  Converted from {originalFile.type ? originalFile.type.split('/')[1].toUpperCase() : 'IMAGE'} to JPEG
                 </CardDescription>
               )}
             </CardHeader>
@@ -316,8 +338,8 @@ export function ExifEditor({ className }) {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Type</span>
-                  <Badge variant={isJpeg(file) ? 'default' : 'secondary'} className="font-mono">
-                    {file.type || 'unknown'}
+                  <Badge variant="default" className="font-mono">
+                    image/jpeg
                   </Badge>
                 </div>
                 {imageDimensions && (
@@ -334,14 +356,14 @@ export function ExifEditor({ className }) {
 
           {/* Right: EXIF Fields */}
           <div className="flex flex-col gap-6">
-            {!isJpeg(file) && (
-              <Card className="border-amber-500/30 bg-amber-50/50 dark:bg-amber-950/20">
+            {originalFile && !isJpeg(originalFile) && (
+              <Card className="border-blue-500/30 bg-blue-50/50 dark:bg-blue-950/20">
                 <CardContent className="flex items-start gap-3 p-4">
-                  <AlertTriangle className="size-5 mt-0.5 shrink-0 text-amber-600 dark:text-amber-400" />
-                  <div className="text-sm text-amber-800 dark:text-amber-200">
-                    <p className="font-medium">EXIF editing is only supported for JPEG files.</p>
-                    <p className="mt-1 text-amber-600/80 dark:text-amber-300/80">
-                      Other formats can be viewed but cannot be edited in-browser.
+                  <Info className="size-5 mt-0.5 shrink-0 text-blue-600 dark:text-blue-400" />
+                  <div className="text-sm text-blue-800 dark:text-blue-200">
+                    <p className="font-medium">Image converted to JPEG</p>
+                    <p className="mt-1 text-blue-600/80 dark:text-blue-300/80">
+                      We've converted your {originalFile.type ? originalFile.type.split('/')[1].toUpperCase() : 'IMAGE'} image to JPEG so you can edit its EXIF metadata.
                     </p>
                   </div>
                 </CardContent>
@@ -385,7 +407,6 @@ export function ExifEditor({ className }) {
                               value={editedFields[key] || ''}
                               onChange={(e) => handleFieldChange(key, e.target.value)}
                               placeholder={`Enter ${label.toLowerCase()}`}
-                              disabled={!isJpeg(file)}
                               className="h-8 text-sm"
                             />
                           </div>
@@ -443,7 +464,6 @@ export function ExifEditor({ className }) {
                           variant="destructive"
                           size="sm"
                           onClick={handleRemoveGps}
-                          disabled={!isJpeg(file)}
                           className="self-start"
                         >
                           <MapPinOff data-icon="inline-start" />
@@ -483,7 +503,7 @@ export function ExifEditor({ className }) {
                     <Button
                       size="lg"
                       onClick={handleSaveDownload}
-                      disabled={!isJpeg(file) || isSaving}
+                      disabled={isSaving}
                       className="w-full gap-2 font-semibold"
                     >
                       {isSaving ? (

@@ -267,5 +267,48 @@ export async function writeExifToJpeg(file, updates) {
  * Check if a file is a JPEG and can be edited.
  */
 export function isJpeg(file) {
-  return file.type.includes('jpeg') || file.type.includes('jpg')
+  if (!file) return false
+  return file.type === 'image/jpeg' || file.type === 'image/jpg' || file.name.toLowerCase().endsWith('.jpg') || file.name.toLowerCase().endsWith('.jpeg')
+}
+
+/**
+ * Convert any image file to a JPEG blob.
+ */
+export async function convertToJpeg(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width
+      canvas.height = img.height
+      const ctx = canvas.getContext('2d')
+      
+      // Handle transparent backgrounds (e.g. PNG) by filling with white
+      ctx.fillStyle = 'white'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      
+      ctx.drawImage(img, 0, 0)
+      
+      canvas.toBlob(
+        (blob) => {
+          if (blob) {
+            // Preserve the original filename but change extension
+            const newName = file.name.replace(/\.[^/.]+$/, "") + ".jpg"
+            const convertedFile = new File([blob], newName, { type: 'image/jpeg' })
+            resolve(convertedFile)
+          } else {
+            reject(new Error('Canvas toBlob failed'))
+          }
+        },
+        'image/jpeg',
+        0.92 // high quality
+      )
+      URL.revokeObjectURL(img.src)
+    }
+    img.onerror = () => {
+      URL.revokeObjectURL(img.src)
+      reject(new Error('Failed to load image for conversion'))
+    }
+    img.src = URL.createObjectURL(file)
+  })
 }
