@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react'
-import { RefreshCcw, Shield } from 'lucide-react'
+import { RefreshCcw } from 'lucide-react'
 import { DropZone } from '@/components/DropZone'
 import { ImagePreview } from '@/components/ImagePreview'
 import { MetadataViewer } from '@/components/MetadataViewer'
@@ -88,10 +88,12 @@ export default function App() {
       <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
           <div className="flex items-center gap-2">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary">
-              <Shield className="size-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold tracking-tight">C2PA Stripper</span>
+            <img
+              src="/incognito-pics-square-thumb.png"
+              alt="incognito.pics"
+              className="size-8 rounded-lg object-contain"
+            />
+            <span className="text-xl font-bold tracking-tight">incognito.pics</span>
           </div>
 
           {file && (
@@ -106,15 +108,22 @@ export default function App() {
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-12 px-4 py-12">
         {!file ? (
           <>
-            <div className="flex flex-col items-center gap-4 text-center">
-              <h1 className="text-4xl font-extrabold tracking-tight text-balance md:text-5xl">
-                Remove hidden metadata{' '}
-                <span className="text-primary">with 100% privacy.</span>
-              </h1>
-              <p className="max-w-lg text-xl text-muted-foreground text-balance">
-                Instantly strip C2PA manifests, EXIF, and XMP data from your images.
-                Everything stays in your browser.
-              </p>
+            <div className="flex flex-col items-center gap-6 text-center">
+              <img
+                src="/incognito-pics-cover-thumb.png"
+                alt="incognito.pics — private image metadata removal"
+                className="w-full max-w-2xl rounded-xl"
+              />
+              <div className="flex flex-col items-center gap-4">
+                <h1 className="text-4xl font-extrabold tracking-tight text-balance md:text-5xl">
+                  Remove hidden metadata{' '}
+                  <span className="text-primary">with 100% privacy.</span>
+                </h1>
+                <p className="max-w-lg text-xl text-muted-foreground text-balance">
+                  Instantly strip C2PA manifests, EXIF, and XMP data from your images.
+                  Everything stays in your browser.
+                </p>
+              </div>
             </div>
 
             <DropZone onFileSelect={handleFileSelect} />
