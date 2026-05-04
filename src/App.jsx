@@ -1,12 +1,14 @@
 import { useState, useCallback, useEffect } from 'react'
-import { RefreshCcw } from 'lucide-react'
+import { RefreshCcw, ShieldOff, FilePenLine } from 'lucide-react'
 import { DropZone } from '@/components/DropZone'
 import { ImagePreview } from '@/components/ImagePreview'
 import { MetadataViewer } from '@/components/MetadataViewer'
 import { DownloadButton } from '@/components/DownloadButton'
+import { ExifEditor } from '@/components/ExifEditor'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
 import { Card, CardContent } from '@/components/ui/card'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { readMetadata } from '@/lib/readMetadata'
 import { stripMetadata } from '@/lib/stripMetadata'
 
@@ -22,6 +24,7 @@ function FeatureCard({ title, desc }) {
 }
 
 export default function App() {
+  const [mode, setMode] = useState('stripper')
   const [file, setFile] = useState(null)
   const [originalUrl, setOriginalUrl] = useState(null)
   const [cleanedBlob, setCleanedBlob] = useState(null)
@@ -86,17 +89,33 @@ export default function App() {
   return (
     <div className="flex min-h-screen flex-col bg-background">
       <header className="sticky top-0 z-10 border-b bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
-          <div className="flex items-center gap-2">
-            <img
-              src="/incognito-pics-square-thumb.png"
-              alt="incognito.pics"
-              className="size-8 rounded-lg object-contain"
-            />
-            <span className="text-xl font-bold tracking-tight">incognito.pics</span>
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 shrink-0">
+              <img
+                src="/incognito-pics-square-thumb.png"
+                alt="incognito.pics"
+                className="size-8 rounded-lg object-contain"
+              />
+              <span className="text-xl font-bold tracking-tight hidden sm:inline">incognito.pics</span>
+            </div>
+            <Tabs value={mode} onValueChange={setMode}>
+              <TabsList>
+                <TabsTrigger value="stripper">
+                  <ShieldOff data-icon="inline-start" />
+                  <span className="hidden sm:inline">Metadata Stripper</span>
+                  <span className="sm:hidden">Strip</span>
+                </TabsTrigger>
+                <TabsTrigger value="editor">
+                  <FilePenLine data-icon="inline-start" />
+                  <span className="hidden sm:inline">EXIF Editor</span>
+                  <span className="sm:hidden">Edit</span>
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
 
-          {file && (
+          {file && mode === 'stripper' && (
             <Button variant="ghost" size="sm" onClick={reset}>
               <RefreshCcw data-icon="inline-start" />
               Start Over
@@ -106,7 +125,9 @@ export default function App() {
       </header>
 
       <main className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-12 px-4 py-12">
-        {!file ? (
+        {mode === 'editor' ? (
+          <ExifEditor />
+        ) : !file ? (
           <>
             <div className="flex flex-col items-center gap-6 text-center">
               <img
