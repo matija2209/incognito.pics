@@ -2,7 +2,7 @@ import { useState, useCallback, useEffect } from 'react'
 import { RefreshCcw, Shield } from 'lucide-react'
 import { DropZone } from '@/components/DropZone'
 import { ImagePreview } from '@/components/ImagePreview'
-import { MetadataDiff } from '@/components/MetadataDiff'
+import { MetadataViewer } from '@/components/MetadataViewer'
 import { DownloadButton } from '@/components/DownloadButton'
 import { Button } from '@/components/ui/button'
 import { Spinner } from '@/components/ui/spinner'
@@ -157,7 +157,7 @@ export default function App() {
 
                 <ImagePreview originalUrl={originalUrl} cleanedUrl={cleanedUrl} />
 
-                <MetadataDiff
+                <MetadataViewer
                   metadata={metadata}
                   originalSize={file.size}
                   strippedSize={strippedSize}
